@@ -174,7 +174,7 @@ alloc_vector (&conv, length+1);
 
 /* calculate entries of convolution vector */
 for (i=0; i<=length; i++)
-    conv[i] = 1 / (sigma * sqrt(2.0 * 3.1415926))
+    conv[i] = 1 / (sigma * sqrt(2.0 * 3.14159265358979323))
               * exp (- (i * i * hx * hx) / (2.0 * sigma * sigma));
 
 /* normalization */
@@ -358,17 +358,18 @@ for(i=1; i<=nx; i++) {
                + w4 * (f1[i][j+1] - f1[i][j-1]);
 
 	 /* time derivative with forward difference, ht = 1 */
-	 /* 
-	    SUPPLEMENT CODE HERE
-	 */
+	 
+     w5 = 1.0 / (1.0 * ht); //why 1.0 ?
+     
+     df_dz = w5 * (f1[i][j] - f2[i][j]);
 	 
 	 /* calculate matrix entries and right-hand side */
 	 dxx[i][j] = df_dx * df_dx;
 	 dxy[i][j] = df_dx * df_dy;
 	 dyy[i][j] = df_dy * df_dy;
-	 /* 
-	    SUPPLEMENT CODE HERE 
-	 */
+     dxz[i][j] = df_dx * df_dz;
+     dyz[i][j] = df_dy * df_dz;
+	
 
 
      }
@@ -416,10 +417,25 @@ float det;       /* determinant of the matrix at pixel [i][j] */
 
 for(i=1; i<=nx; i++) {
     for(j=1; j<=ny; j++) {
+      trace = dxx[i][j] + dyy[i][j]; 
+      det = dxx[i][j] * dyy[i][j] - dxy[i][j] * dxy[i][j];
 
-	/* 
-	   SUPPLEMENT CODE HERE
-	*/
+      if (trace < eps)
+      {
+          c[i][j] = 0.0;  //Nothing can be said in this case
+      }
+      else if (det < eps)
+      {
+          c[i][j] = 0.5;
+          u[i][j] = -1/(dxx[i][j]+dyy[i][j]) * (dxy[i][j]);
+          v[i][j] = -1/(dxx[i][j]+dyy[i][j]) * (dyz[i][j]);
+      }
+      else
+      {
+          c[i][j] = 1.0;
+          u[i][j] = (dxz[i][j] * dyy[i][j]- dyz[i][j] * dxy[i][j])/(dxx[i][j]*dyy[i][j] - dxy[i][j]* dxy[i][j]);
+          v[i][j] = (dyz[i][j] * dxx[i][j]- dxz[i][j] * dxy[i][j])/(dxx[i][j]*dyy[i][j] - dxy[i][j]* dxy[i][j]);
+      }
 
     }
 }
