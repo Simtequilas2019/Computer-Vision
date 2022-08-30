@@ -359,9 +359,8 @@ for(i=1; i<=nx; i++) {
 
 	 /* time derivative with forward difference, ht = 1 */
 	 
-     w5 = 1.0 / (1.0 * ht); //why 1.0 ?
-     
-     df_dz = w5 * (f1[i][j] - f2[i][j]);
+     w5 = 1.0 / ht; 
+     df_dz = w5 * (f2[i][j] - f1[i][j]);
 	 
 	 /* calculate matrix entries and right-hand side */
 	 dxx[i][j] = df_dx * df_dx;
@@ -381,9 +380,8 @@ if (rho > 0.0)
    gauss_conv (rho, nx, ny, hx, hy, 5.0, 0, dxx);
    gauss_conv (rho, nx, ny, hx, hy, 5.0, 0, dxy);
    gauss_conv (rho, nx, ny, hx, hy, 5.0, 0, dyy);
-   /* 
-      SUPPLEMENT CODE HERE
-   */
+   gauss_conv (rho, nx, ny, hx, hy, 5.0, 0, dxz);
+   gauss_conv (rho, nx, ny, hx, hy, 5.0, 0, dyz);
    }
 
 return;
@@ -423,18 +421,22 @@ for(i=1; i<=nx; i++) {
       if (trace < eps)
       {
           c[i][j] = 0.0;  //Nothing can be said in this case
+          u[i][j] = 0.0;
+          v[i][j] = 0.0;
       }
       else if (det < eps)
       {
-          c[i][j] = 0.5;
-          u[i][j] = -1/(dxx[i][j]+dyy[i][j]) * (dxy[i][j]);
-          v[i][j] = -1/(dxx[i][j]+dyy[i][j]) * (dyz[i][j]);
+          /* we can only compute the normal flow */
+            u[i][j] = -dxz[i][j] / trace;
+            v[i][j] = -dyz[i][j] / trace;
+            c[i][j] = 127.0;
       }
       else
       {
-          c[i][j] = 1.0;
-          u[i][j] = (dxz[i][j] * dyy[i][j]- dyz[i][j] * dxy[i][j])/(dxx[i][j]*dyy[i][j] - dxy[i][j]* dxy[i][j]);
-          v[i][j] = (dyz[i][j] * dxx[i][j]- dxz[i][j] * dxy[i][j])/(dxx[i][j]*dyy[i][j] - dxy[i][j]* dxy[i][j]);
+          /* we can solve the system */
+        u[i][j] = ( - dxz[i][j] * dyy[i][j] + dyz[i][j] * dxy[i][j] ) / det;
+        v[i][j] = ( - dyz[i][j] * dxx[i][j] + dxz[i][j] * dxy[i][j] ) / det;
+        c[i][j] = 255.0;
       }
 
     }
